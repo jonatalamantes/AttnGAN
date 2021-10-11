@@ -1,6 +1,7 @@
 from __future__ import print_function
 from six.moves import range
 
+import uuid
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -21,6 +22,7 @@ from miscc.losses import words_loss
 from miscc.losses import discriminator_loss, generator_loss, KL_loss
 import os
 import time
+import datetime
 import numpy as np
 import sys
 
@@ -196,6 +198,7 @@ class condGANTrainer(object):
                 fullpath = '%s/G_%s_%d_%d.png'\
                     % (self.image_dir, name, gen_iterations, i)
                 im.save(fullpath)
+                print("1) Save at " + fullpath)
 
         # for i in range(len(netsD)):
         i = -1
@@ -231,6 +234,7 @@ class condGANTrainer(object):
         gen_iterations = 0
         # gen_iterations = start_epoch * self.num_batches
         for epoch in range(start_epoch, self.max_epoch):
+            print(epoch, "/", self.max_epoch)
             start_t = time.time()
 
             data_iter = iter(self.data_loader)
@@ -344,6 +348,7 @@ class condGANTrainer(object):
             ndarr = img.permute(1, 2, 0).data.cpu().numpy()
             im = Image.fromarray(ndarr)
             im.save(fullpath)
+            print("2) Save at " + fullpath)
 
     def sampling(self, split_dir):
         if cfg.TRAIN.NET_G == '':
@@ -430,6 +435,7 @@ class condGANTrainer(object):
                         im = Image.fromarray(im)
                         fullpath = '%s_s%d.png' % (s_tmp, k)
                         im.save(fullpath)
+                        print("3) Save at " + fullpath)
 
     def gen_example(self, data_dic):
         if cfg.TRAIN.NET_G == '':
@@ -458,8 +464,9 @@ class condGANTrainer(object):
             print('Load G from: ', model_dir)
             netG.cuda()
             netG.eval()
+            _id = str(uuid.uuid1())
             for key in data_dic:
-                save_dir = '%s/%s' % (s_tmp, key)
+                save_dir = '%s/%s/%s' % (s_tmp, _id, key)
                 mkdir_p(save_dir)
                 captions, cap_lens, sorted_indices = data_dic[key]
 
@@ -489,6 +496,17 @@ class condGANTrainer(object):
                     # (2) Generate fake images
                     ######################################################
                     noise.data.normal_(0, 1)
+                    #import pdb; pdb.set_trace()
+
+                    #with torch.no_grad():
+
+                        #seed = datetime.datetime.now().strftime("%H%M%S%f")
+                        #seed = datetime.datetime.now().strftime("%f")
+                        #np.random.seed(int(seed))
+                        #noise = np.random.normal(0, 1, size=(batch_size, nz))
+                        #noise = Variable(torch.from_numpy(noise).float())
+                        #noise = noise.cuda()
+
                     fake_imgs, attention_maps, _, _ = netG(noise, sent_emb, words_embs, mask)
                     # G attention
                     cap_lens_np = cap_lens.cpu().data.numpy()
@@ -504,6 +522,7 @@ class condGANTrainer(object):
                             im = Image.fromarray(im)
                             fullpath = '%s_g%d.png' % (save_name, k)
                             im.save(fullpath)
+                            print("4) Save at " + fullpath)
 
                         for k in range(len(attention_maps)):
                             if len(fake_imgs) > 1:
@@ -521,3 +540,4 @@ class condGANTrainer(object):
                                 im = Image.fromarray(img_set)
                                 fullpath = '%s_a%d.png' % (save_name, k)
                                 im.save(fullpath)
+                                print("5) Save at " + fullpath)

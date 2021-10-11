@@ -1,0 +1,16 @@
+# TRAIN DASM
+python pretrain_DAMSM.py --cfg cfg/DAMSM/anime_wb.yml --gpu 7
+
+# TRAIN ATTN
+python main.py --cfg cfg/anime_wb_attn.yml --gpu 7
+
+# EVAL
+python main.py --cfg cfg/eval_anime_wb.yml --gpu 7
+
+
+
+# Find txt
+ls ../final/original/ | sed "s/jpg/txt/g" | awk '{print "find ../data/anime -name \"*" $0 "*\" -exec cp {} ../final/original/ \\;"}' | bash
+
+# Find img
+ls ../final/original_wb/* | grep jpg | xargs ls -la  | sed "s@../final/original_wb/@@g" | sed "s@_[0-9].*.jpg@@g" | awk '{print "ls -la ../data/anime/CUB_200_2011/images/*" $9 "*/* | grep ", $5}' | bash | awk '{print "cp ", $9, "../final/original/"}' | bash
